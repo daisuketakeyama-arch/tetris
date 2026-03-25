@@ -408,7 +408,7 @@
 
             #gameCanvas2 {
                 max-width: calc(100vw - 100px);
-                max-height: calc(100vh - 250px); /* 上部情報、ボタン、広告分を確保 */
+                max-height: calc(100vh - 280px); /* 上部情報、ボタン、広告分を確保 */
                 width: auto;
                 height: auto;
                 border: 3px solid #333;
@@ -417,7 +417,7 @@
 
             .touch-controls {
                 flex-shrink: 0;
-                margin: 0 0 70px 0; /* 広告スペースを下に確保 */
+                margin: 8px 0 70px 0; /* ゲーム画面との距離を確保 */
             }
 
             .touch-btn {
@@ -462,7 +462,11 @@
             }
 
             #gameCanvas2 {
-                max-height: calc(100vh - 280px);
+                max-height: calc(100vh - 300px);
+            }
+
+            .touch-controls {
+                margin-top: 8px;
             }
 
             .stat-label {
