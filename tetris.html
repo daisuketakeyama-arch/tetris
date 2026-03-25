@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>奈那子のテトリス</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 90vw;
+            max-height: 95vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+
+        .game-wrapper {
+            display: flex;
+            gap: 15px;
+            flex-wrap: nowrap;
+            justify-content: center;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #gameCanvas {
+            border: 3px solid #333;
+            background: #000;
+            display: block;
+            max-height: calc(95vh - 80px);
+            width: auto;
+        }
+
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+        }
+
+        .info-box {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 10px;
+            min-width: 150px;
+        }
+
+        .info-box h3 {
+            margin: 0 0 5px 0;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .score-display {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        #nextCanvas {
+            border: 2px solid #999;
+            background: #000;
+            display: block;
+            margin-top: 10px;
+        }
+
+        .controls {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .controls h3 {
+            margin: 0 0 5px 0;
+            color: #333;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #667eea;
+            color: white;
+            transition: background 0.3s;
+            margin-bottom: 8px;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        button:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 40px 60px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+
+        .game-over h2 {
+            margin: 0 0 20px 0;
+            font-size: 36px;
+        }
+
+        .game-over p {
+            margin: 10px 0;
+            font-size: 20px;
+        }
+
+        .record-badge {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #333;
+            padding: 15px 30px;
+            border-radius: 50px;
+            margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5);
+            animation: recordPulse 1.5s ease-in-out infinite;
+        }
+
+        .badge-icon {
+            font-size: 32px;
+            animation: recordSpin 2s linear infinite;
+        }
+
+        .badge-text {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        @keyframes recordPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5); }
+            50% { transform: scale(1.05); box-shadow: 0 8px 30px rgba(255, 215, 0, 0.8); }
+        }
+
+        @keyframes recordSpin {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        .result-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            min-width: 300px;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
+
+        .result-label {
+            font-size: 18px;
+            color: #ccc;
+        }
+
+        .result-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .result-value.highlight {
+            color: #667eea;
+            font-size: 32px;
+        }
+
+        .result-value.gold {
+            color: #ffd700;
+            font-size: 32px;
+        }
+
+        .result-divider {
+            height: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 10px 0;
+        }
+
+        .mode-select {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 40px 60px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+
+        .mode-select h2 {
+            margin: 0 0 30px 0;
+            font-size: 28px;
+        }
+
+        .mode-select button {
+            margin: 10px;
+            min-width: 200px;
+        }
+
+        .mobile-layout {
+            display: none;
+        }
+
+        .desktop-layout {
+            display: flex;
+        }
+
+        .touch-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .touch-btn {
+            width: 80px;
+            height: 60px;
+            font-size: 20px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .touch-btn.large {
+            grid-column: span 3;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            .container {
+                padding: 5px;
+                width: 100vw;
+                max-width: 100vw;
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+                display: flex;
+                flex-direction: column;
+            }
+
+            h1 {
+                font-size: 18px;
+                margin: 0 0 5px 0;
+                text-align: center;
+            }
+
+            .desktop-layout {
+                display: none !important;
+            }
+
+            .mobile-layout {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                overflow: hidden;
+            }
+
+            .mobile-top {
+                flex-shrink: 0;
+                margin-bottom: 5px;
+            }
+
+            .button-row {
+                display: flex;
+                gap: 5px;
+                margin-bottom: 5px;
+            }
+
+            .button-row button {
+                flex: 1;
+                padding: 8px;
+                font-size: 14px;
+                margin-bottom: 0;
+            }
+
+            .stats-row {
+                display: flex;
+                justify-content: space-around;
+                background: #f0f0f0;
+                padding: 6px 4px;
+                border-radius: 8px;
+                overflow-x: auto;
+            }
+
+            .stat-item {
+                text-align: center;
+                flex-shrink: 0;
+            }
+
+            .stat-label {
+                font-size: 10px;
+                color: #666;
+                margin-bottom: 2px;
+                white-space: nowrap;
+            }
+
+            .stat-value {
+                font-size: 14px;
+                font-weight: bold;
+                color: #667eea;
+            }
+
+            .mobile-game-container {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 0;
+                overflow: hidden;
+                margin: 5px 0;
+                gap: 5px;
+            }
+
+            .mobile-next-preview {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 3px;
+                flex-shrink: 0;
+            }
+
+            .next-label {
+                font-size: 11px;
+                font-weight: bold;
+                color: #333;
+            }
+
+            #nextCanvas2 {
+                border: 2px solid #999;
+                background: #000;
+                display: block;
+                width: 70px;
+                height: 70px;
+            }
+
+            .mobile-game {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex: 1;
+                min-width: 0;
+            }
+
+            #gameCanvas2 {
+                max-width: 100%;
+                max-height: 100%;
+                width: auto;
+                height: auto;
+                border: 3px solid #333;
+                background: #000;
+            }
+
+            .touch-controls {
+                flex-shrink: 0;
+                margin: 0;
+                padding-bottom: 60px; /* 広告スペースを確保 */
+            }
+
+            .touch-btn {
+                width: 70px;
+                height: 50px;
+                font-size: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 16px;
+                margin: 0 0 3px 0;
+            }
+
+            .mobile-top {
+                margin-bottom: 3px;
+            }
+
+            .button-row {
+                margin-bottom: 3px;
+            }
+
+            .button-row button {
+                padding: 6px;
+                font-size: 13px;
+            }
+
+            .stats-row {
+                padding: 5px 3px;
+            }
+
+            .touch-btn {
+                width: 60px;
+                height: 45px;
+                font-size: 18px;
+            }
+
+            .touch-controls {
+                grid-template-columns: repeat(3, 60px);
+                gap: 6px;
+                padding-bottom: 3px;
+            }
+
+            .stat-label {
+                font-size: 9px;
+            }
+
+            .stat-value {
+                font-size: 13px;
+            }
+
+            #nextCanvas2 {
+                width: 60px;
+                height: 60px;
+            }
+
+            .next-label {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>奈那子のテトリス</h1>
+
+        <!-- PC用レイアウト -->
+        <div class="game-wrapper desktop-layout">
+            <div class="game-area">
+                <canvas id="gameCanvas" width="300" height="600"></canvas>
+            </div>
+            <div class="info-panel">
+                <div class="info-box">
+                    <h3>スコア</h3>
+                    <div class="score-display" id="score">0</div>
+                </div>
+                <div class="info-box">
+                    <h3>レベル</h3>
+                    <div class="score-display" id="level">1</div>
+                </div>
+                <div class="info-box">
+                    <h3>ライン</h3>
+                    <div class="score-display" id="lines">0</div>
+                </div>
+                <div class="info-box">
+                    <h3>最高記録</h3>
+                    <div class="score-display high-score-value">0</div>
+                </div>
+                <div class="info-box">
+                    <h3>つぎのブロック</h3>
+                    <canvas id="nextCanvas" width="120" height="120"></canvas>
+                </div>
+                <div class="info-box">
+                    <h3 id="modeLabel">モード: -</h3>
+                </div>
+                <button id="startBtn">スタート</button>
+                <button id="pauseBtn">ストップ</button>
+                <div class="controls">
+                    <h3>やりかた</h3>
+                    <p>← → 左右にいどう<br>
+                    ↓ 下にいどう<br>
+                    ↑ かいてん<br>
+                    Z かいてん（はんたい）<br>
+                    スペース 下にすばやくいどう<br>
+                    P ていし</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- スマホ用レイアウト -->
+        <div class="mobile-layout">
+            <div class="mobile-top">
+                <div class="button-row">
+                    <button id="startBtn2">スタート</button>
+                    <button id="pauseBtn2">ストップ</button>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-label">スコア</div>
+                        <div class="stat-value" id="score2">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">レベル</div>
+                        <div class="stat-value" id="level2">1</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">ライン</div>
+                        <div class="stat-value" id="lines2">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">最高記録</div>
+                        <div class="stat-value high-score-value">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label" id="modeLabel2">モード: -</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mobile-game-container">
+                <div class="mobile-game">
+                    <canvas id="gameCanvas2" width="300" height="600"></canvas>
+                </div>
+                <div class="mobile-next-preview">
+                    <div class="next-label">つぎ</div>
+                    <canvas id="nextCanvas2" width="80" height="80"></canvas>
+                </div>
+            </div>
+
+            <div class="touch-controls">
+                <button class="touch-btn" id="rotateLeftBtn">↺</button>
+                <button class="touch-btn" id="rotateRightBtn">↻</button>
+                <button class="touch-btn" id="downBtn">↓</button>
+                <button class="touch-btn" id="leftBtn">←</button>
+                <button class="touch-btn" id="hardDropBtn">⇩</button>
+                <button class="touch-btn" id="rightBtn">→</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="mode-select" id="modeSelect">
+        <h2>モードを選択</h2>
+        <button id="normalBtn">ふつう</button>
+        <button id="easyBtn">おたすけモード</button>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div id="recordMessage" class="record-badge" style="display: none;">
+            <div class="badge-icon">🎉</div>
+            <div class="badge-text">記録更新！</div>
+        </div>
+        <h2>ゲームオーバー</h2>
+        <div class="result-container">
+            <div class="result-row">
+                <span class="result-label">今回のスコア</span>
+                <span class="result-value highlight" id="finalScore">0</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">ライン数</span>
+                <span class="result-value" id="finalLines">0</span>
+            </div>
+            <div class="result-divider"></div>
+            <div class="result-row">
+                <span class="result-label">最高記録</span>
+                <span class="result-value gold" id="highScoreDisplay">0</span>
+            </div>
+        </div>
+        <button onclick="location.reload()">もう一度</button>
+    </div>
+
+    <script>
+        // デバイス判定
+        const isMobile = window.innerWidth <= 768;
+
+        // 使用するキャンバスを判定
+        const canvas = document.getElementById(isMobile ? 'gameCanvas2' : 'gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const nextCanvas = document.getElementById(isMobile ? 'nextCanvas2' : 'nextCanvas');
+        const nextCtx = nextCanvas ? nextCanvas.getContext('2d') : null;
+
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = 30;
+
+        // テトリミノの形状
+        const SHAPES = [
+            [[1,1,1,1]], // I
+            [[1,1],[1,1]], // O
+            [[0,1,0],[1,1,1]], // T
+            [[1,0,0],[1,1,1]], // L
+            [[0,0,1],[1,1,1]], // J
+            [[0,1,1],[1,1,0]], // S
+            [[1,1,0],[0,1,1]]  // Z
+        ];
+
+        const COLORS = [
+            '#00f0f0', // I - シアン
+            '#f0f000', // O - 黄色
+            '#a000f0', // T - 紫
+            '#f0a000', // L - オレンジ
+            '#0000f0', // J - 青
+            '#00f000', // S - 緑
+            '#f00000'  // Z - 赤
+        ];
+
+        let board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+        let currentPiece = null;
+        let nextPiece = null;
+        let score = 0;
+        let lines = 0;
+        let level = 1;
+        let gameRunning = false;
+        let gamePaused = false;
+        let easyMode = false;
+        let dropCounter = 0;
+        let dropInterval = 1000;
+        let lastTime = 0;
+        let highScore = 0;
+
+        // 最高スコアをlocalStorageから読み込む
+        function loadHighScore() {
+            const saved = localStorage.getItem('tetrisHighScore');
+            highScore = saved ? parseInt(saved) : 0;
+            updateHighScoreDisplay();
+        }
+
+        // 最高スコアをlocalStorageに保存
+        function saveHighScore(newScore) {
+            if (newScore > highScore) {
+                highScore = newScore;
+                localStorage.setItem('tetrisHighScore', highScore.toString());
+                return true; // 記録更新
+            }
+            return false;
+        }
+
+        // 最高スコア表示を更新
+        function updateHighScoreDisplay() {
+            const highScoreEls = document.querySelectorAll('.high-score-value');
+            highScoreEls.forEach(el => {
+                if (el) el.textContent = highScore;
+            });
+        }
+
+        // 初期化時に最高スコアを読み込む
+        loadHighScore();
+
+        class Piece {
+            constructor(shape, color) {
+                this.shape = shape;
+                this.color = color;
+                this.x = Math.floor(COLS / 2) - Math.floor(shape[0].length / 2);
+                this.y = 0;
+            }
+
+            rotateClockwise() {
+                const rotated = this.shape[0].map((_, i) =>
+                    this.shape.map(row => row[i]).reverse()
+                );
+                const prevShape = this.shape;
+                this.shape = rotated;
+
+                if (this.collides()) {
+                    this.shape = prevShape;
+                }
+            }
+
+            rotateCounterClockwise() {
+                const rotated = this.shape[0].map((_, i) =>
+                    this.shape.map(row => row[row.length - 1 - i])
+                );
+                const prevShape = this.shape;
+                this.shape = rotated;
+
+                if (this.collides()) {
+                    this.shape = prevShape;
+                }
+            }
+
+            move(dx, dy) {
+                this.x += dx;
+                this.y += dy;
+
+                if (this.collides()) {
+                    this.x -= dx;
+                    this.y -= dy;
+                    return false;
+                }
+                return true;
+            }
+
+            collides() {
+                for (let y = 0; y < this.shape.length; y++) {
+                    for (let x = 0; x < this.shape[y].length; x++) {
+                        if (this.shape[y][x]) {
+                            const newX = this.x + x;
+                            const newY = this.y + y;
+
+                            if (newX < 0 || newX >= COLS || newY >= ROWS) {
+                                return true;
+                            }
+
+                            if (newY >= 0 && board[newY][newX]) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+        }
+
+        function createPiece() {
+            const index = Math.floor(Math.random() * SHAPES.length);
+            return new Piece(SHAPES[index], COLORS[index]);
+        }
+
+        function drawBlock(ctx, x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        }
+
+        function drawBoard() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (board[y][x]) {
+                        drawBlock(ctx, x, y, board[y][x]);
+                    }
+                }
+            }
+        }
+
+        function drawPiece(piece) {
+            for (let y = 0; y < piece.shape.length; y++) {
+                for (let x = 0; x < piece.shape[y].length; x++) {
+                    if (piece.shape[y][x]) {
+                        drawBlock(ctx, piece.x + x, piece.y + y, piece.color);
+                    }
+                }
+            }
+        }
+
+        function drawGhostPiece(piece) {
+            // ゴーストピースの位置を計算
+            let ghostY = piece.y;
+            const testPiece = new Piece(piece.shape, piece.color);
+            testPiece.x = piece.x;
+            testPiece.y = piece.y;
+
+            while (!testPiece.collides()) {
+                ghostY = testPiece.y;
+                testPiece.y++;
+            }
+
+            // 半透明で描画
+            ctx.globalAlpha = 0.3;
+            for (let y = 0; y < piece.shape.length; y++) {
+                for (let x = 0; x < piece.shape[y].length; x++) {
+                    if (piece.shape[y][x]) {
+                        drawBlock(ctx, piece.x + x, ghostY + y, piece.color);
+                    }
+                }
+            }
+            ctx.globalAlpha = 1.0;
+        }
+
+        function drawNextPiece() {
+            if (!nextCtx) return;
+
+            nextCtx.fillStyle = '#000';
+            nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+
+            if (nextPiece) {
+                // キャンバスサイズに応じてブロックサイズを調整
+                const blockSize = isMobile ? 20 : BLOCK_SIZE;
+                const offsetX = (4 - nextPiece.shape[0].length) / 2;
+                const offsetY = (4 - nextPiece.shape.length) / 2;
+
+                for (let y = 0; y < nextPiece.shape.length; y++) {
+                    for (let x = 0; x < nextPiece.shape[y].length; x++) {
+                        if (nextPiece.shape[y][x]) {
+                            nextCtx.fillStyle = nextPiece.color;
+                            nextCtx.fillRect(
+                                (offsetX + x) * blockSize,
+                                (offsetY + y) * blockSize,
+                                blockSize,
+                                blockSize
+                            );
+                            nextCtx.strokeStyle = '#000';
+                            nextCtx.lineWidth = 2;
+                            nextCtx.strokeRect(
+                                (offsetX + x) * blockSize,
+                                (offsetY + y) * blockSize,
+                                blockSize,
+                                blockSize
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        function mergePiece() {
+            for (let y = 0; y < currentPiece.shape.length; y++) {
+                for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (currentPiece.shape[y][x]) {
+                        const boardY = currentPiece.y + y;
+                        const boardX = currentPiece.x + x;
+                        if (boardY >= 0) {
+                            board[boardY][boardX] = currentPiece.color;
+                        }
+                    }
+                }
+            }
+        }
+
+        function clearLines() {
+            let linesCleared = 0;
+
+            for (let y = ROWS - 1; y >= 0; y--) {
+                if (board[y].every(cell => cell !== 0)) {
+                    board.splice(y, 1);
+                    board.unshift(Array(COLS).fill(0));
+                    linesCleared++;
+                    y++;
+                }
+            }
+
+            if (linesCleared > 0) {
+                lines += linesCleared;
+                score += [0, 100, 300, 500, 800][linesCleared] * level;
+                level = Math.floor(lines / 10) + 1;
+                dropInterval = Math.max(100, 1000 - (level - 1) * 100);
+                updateStats();
+            }
+        }
+
+        function updateStats() {
+            // デスクトップ用
+            const scoreEl = document.getElementById('score');
+            const linesEl = document.getElementById('lines');
+            const levelEl = document.getElementById('level');
+            if (scoreEl) scoreEl.textContent = score;
+            if (linesEl) linesEl.textContent = lines;
+            if (levelEl) levelEl.textContent = level;
+
+            // モバイル用
+            const score2El = document.getElementById('score2');
+            const lines2El = document.getElementById('lines2');
+            const level2El = document.getElementById('level2');
+            if (score2El) score2El.textContent = score;
+            if (lines2El) lines2El.textContent = lines;
+            if (level2El) level2El.textContent = level;
+        }
+
+        function drop() {
+            if (!currentPiece.move(0, 1)) {
+                mergePiece();
+                clearLines();
+                currentPiece = nextPiece;
+                nextPiece = createPiece();
+                drawNextPiece();
+
+                if (currentPiece.collides()) {
+                    gameOver();
+                }
+            }
+        }
+
+        function hardDrop() {
+            while (currentPiece.move(0, 1)) {
+                score += 2;
+            }
+            updateStats();
+            drop();
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalLines').textContent = lines;
+
+            // 記録更新チェック
+            const isNewRecord = saveHighScore(score);
+            const recordMsg = document.getElementById('recordMessage');
+            if (isNewRecord && score > 0) {
+                recordMsg.textContent = 'おめでとう！記録更新！';
+                recordMsg.style.display = 'block';
+            } else {
+                recordMsg.style.display = 'none';
+            }
+
+            // 最高記録を表示
+            document.getElementById('highScoreDisplay').textContent = highScore;
+
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        function update(time = 0) {
+            if (!gameRunning) return;
+
+            const deltaTime = time - lastTime;
+            lastTime = time;
+
+            if (!gamePaused) {
+                dropCounter += deltaTime;
+
+                if (dropCounter > dropInterval) {
+                    drop();
+                    dropCounter = 0;
+                }
+            }
+
+            drawBoard();
+            if (easyMode) {
+                drawGhostPiece(currentPiece);
+            }
+            drawPiece(currentPiece);
+            requestAnimationFrame(update);
+        }
+
+        function togglePause() {
+            if (!gameRunning) return;
+            gamePaused = !gamePaused;
+            const text = gamePaused ? 'さいかい' : 'ストップ';
+            const pauseBtn = document.getElementById('pauseBtn');
+            const pauseBtn2 = document.getElementById('pauseBtn2');
+            if (pauseBtn) pauseBtn.textContent = text;
+            if (pauseBtn2) pauseBtn2.textContent = text;
+        }
+
+        function startGame(mode) {
+            board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+            score = 0;
+            lines = 0;
+            level = 1;
+            dropInterval = 1000;
+            easyMode = mode === 'easy';
+            currentPiece = createPiece();
+            nextPiece = createPiece();
+            gameRunning = true;
+            gamePaused = false;
+            updateStats();
+            drawNextPiece();
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('modeSelect').style.display = 'none';
+
+            const startBtn = document.getElementById('startBtn');
+            const startBtn2 = document.getElementById('startBtn2');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const pauseBtn2 = document.getElementById('pauseBtn2');
+            const modeLabel = document.getElementById('modeLabel');
+            const modeLabel2 = document.getElementById('modeLabel2');
+
+            if (startBtn) startBtn.textContent = 'やりなおし';
+            if (startBtn2) startBtn2.textContent = 'やりなおし';
+            if (pauseBtn) pauseBtn.textContent = 'ストップ';
+            if (pauseBtn2) pauseBtn2.textContent = 'ストップ';
+
+            const modeText = easyMode ? 'モード: おたすけ' : 'モード: ふつう';
+            if (modeLabel) modeLabel.textContent = modeText;
+            if (modeLabel2) modeLabel2.textContent = modeText;
+
+            requestAnimationFrame(update);
+        }
+
+        function handleStartClick() {
+            if (gameRunning) {
+                if (confirm('やりなおしますか？')) {
+                    document.getElementById('modeSelect').style.display = 'block';
+                }
+            } else {
+                document.getElementById('modeSelect').style.display = 'block';
+            }
+        }
+
+        // デスクトップボタン
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        if (startBtn) startBtn.addEventListener('click', handleStartClick);
+        if (pauseBtn) pauseBtn.addEventListener('click', togglePause);
+
+        // モバイルボタン
+        const startBtn2 = document.getElementById('startBtn2');
+        const pauseBtn2 = document.getElementById('pauseBtn2');
+        if (startBtn2) startBtn2.addEventListener('click', handleStartClick);
+        if (pauseBtn2) pauseBtn2.addEventListener('click', togglePause);
+
+        // モード選択
+        document.getElementById('normalBtn').addEventListener('click', () => startGame('normal'));
+        document.getElementById('easyBtn').addEventListener('click', () => startGame('easy'));
+
+        // タッチ操作
+        document.getElementById('leftBtn').addEventListener('click', () => {
+            if (gameRunning && !gamePaused) currentPiece.move(-1, 0);
+        });
+        document.getElementById('rightBtn').addEventListener('click', () => {
+            if (gameRunning && !gamePaused) currentPiece.move(1, 0);
+        });
+        document.getElementById('downBtn').addEventListener('click', () => {
+            if (gameRunning && !gamePaused) {
+                drop();
+                score += 1;
+                updateStats();
+            }
+        });
+        document.getElementById('rotateLeftBtn').addEventListener('click', () => {
+            if (gameRunning && !gamePaused) currentPiece.rotateCounterClockwise();
+        });
+        document.getElementById('rotateRightBtn').addEventListener('click', () => {
+            if (gameRunning && !gamePaused) currentPiece.rotateClockwise();
+        });
+        document.getElementById('hardDropBtn').addEventListener('click', () => {
+            if (gameRunning && !gamePaused) hardDrop();
+        });
+
+        // スワイプとタップ操作
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+        let touchStartTime = 0;
+
+        canvas.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+            touchStartTime = Date.now();
+        }, { passive: true });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (!gameRunning || gamePaused) return;
+
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            const touchDuration = Date.now() - touchStartTime;
+
+            handleTouch(touchDuration);
+        }, { passive: true });
+
+        function handleTouch(duration) {
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+            const minSwipeDistance = 30;
+            const tapMaxDuration = 200; // 200ms以下をタップとみなす
+            const tapMaxDistance = 10; // 移動距離が小さければタップ
+
+            // タップ判定
+            if (duration < tapMaxDuration && Math.abs(deltaX) < tapMaxDistance && Math.abs(deltaY) < tapMaxDistance) {
+                currentPiece.rotateClockwise();
+                return;
+            }
+
+            // スワイプ判定
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // 横スワイプ
+                if (Math.abs(deltaX) > minSwipeDistance) {
+                    if (deltaX > 0) {
+                        currentPiece.move(1, 0); // 右
+                    } else {
+                        currentPiece.move(-1, 0); // 左
+                    }
+                }
+            } else {
+                // 縦スワイプ
+                if (Math.abs(deltaY) > minSwipeDistance && deltaY > 0) {
+                    drop(); // 下
+                    score += 1;
+                    updateStats();
+                }
+            }
+        }
+
+        // PC用のキャンバスクリックで回転
+        canvas.addEventListener('click', () => {
+            if (gameRunning && !gamePaused && window.innerWidth > 768) {
+                currentPiece.rotateClockwise();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+
+            if (e.key === 'p' || e.key === 'P') {
+                togglePause();
+                return;
+            }
+
+            if (gamePaused) return;
+
+            switch(e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    currentPiece.move(-1, 0);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    currentPiece.move(1, 0);
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    drop();
+                    score += 1;
+                    updateStats();
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    currentPiece.rotateClockwise();
+                    break;
+                case 'z':
+                case 'Z':
+                    e.preventDefault();
+                    currentPiece.rotateCounterClockwise();
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    hardDrop();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
